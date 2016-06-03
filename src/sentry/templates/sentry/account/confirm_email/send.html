@@ -1,0 +1,12 @@
+{% extends "sentry/bases/auth.html" %}
+
+{% load crispy_forms_tags %}
+{% load i18n %}
+
+{% block title %}{% trans "Confirm Email" %} | {{ block.super }}{% endblock %}
+
+{% block auth_main %}
+    <h2>{% trans "Confirm Email" %}</h2>
+
+    <p>{% trans "A verification email has been sent to " %}{{ request.user.email }}.</p>
+{% endblock %}

@@ -5,13 +5,16 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.http import HttpResponseRedirect
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.cache import never_cache
 
 from sentry import features
 from sentry.constants import WARN_SESSION_EXPIRED
-from sentry.models import AuthProvider, Organization, OrganizationStatus
+from sentry.models import (
+    AuthProvider, LostPasswordHash, Organization, OrganizationStatus)
 from sentry.web.forms.accounts import AuthenticationForm, RegistrationForm
+from sentry.web.frontend.accounts import send_confirm_email
 from sentry.web.frontend.base import BaseView
 from sentry.utils import auth
 
@@ -71,6 +74,7 @@ class AuthLoginView(BaseView):
 
         if can_register and register_form.is_valid():
             user = register_form.save()
+            send_confirm_email(user)
 
             # HACK: grab whatever the first backend is and assume it works
             user.backend = settings.AUTHENTICATION_BACKENDS[0]

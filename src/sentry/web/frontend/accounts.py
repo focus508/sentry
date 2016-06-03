@@ -33,6 +33,18 @@ from sentry.utils.auth import get_auth_providers, get_login_redirect
 from sentry.utils.safe import safe_execute
 
 
+def send_confirm_email(user):
+    password_hash, _ = LostPasswordHash.objects.get_or_create(
+        user=user
+    )
+    if not password_hash.is_valid():
+        password_hash.date_added = timezone.now()
+        password_hash.set_hash()
+        password_hash.save()
+
+    password_hash.send_confirm_email()
+
+
 @login_required
 def login_redirect(request):
     login_url = get_login_redirect(request)
@@ -110,6 +122,29 @@ def recover_confirm(request, user_id, hash):
         }
 
     return render_to_response(tpl, context, request)
+
+
+@login_required
+def start_confirm_email(request):
+    send_confirm_email(request.user)
+    return render_to_response('sentry/account/confirm_email/send.html', {}, request)
+
+
+def confirm_email(request, user_id, hash):
+    try:
+        password_hash = LostPasswordHash.objects.get(user=user_id, hash=hash)
+        if not password_hash.is_valid():
+            password_hash.delete()
+            raise LostPasswordHash.DoesNotExist
+        user = password_hash.user
+    except LostPasswordHash.DoesNotExist:
+        tpl = 'sentry/account/confirm_email/failure.html'
+    else:
+        tpl = 'sentry/account/confirm_email/success.html'
+        # TODO: mark user as verified
+        password_hash.delete()
+
+    return render_to_response(tpl, {}, request)
 
 
 @csrf_protect

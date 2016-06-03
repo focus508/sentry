@@ -13,6 +13,7 @@ from sentry.constants import WARN_SESSION_EXPIRED
 from sentry.models import AuthProvider, Organization, OrganizationStatus
 from sentry.utils import auth
 from sentry.web.forms.accounts import AuthenticationForm, RegistrationForm
+from sentry.web.frontend.accounts import send_confirm_email
 from sentry.web.frontend.base import BaseView
 
 
@@ -45,6 +46,7 @@ class AuthOrganizationLoginView(BaseView):
 
         if can_register and register_form.is_valid():
             user = register_form.save()
+            send_confirm_email(user)
 
             defaults = {
                 'role': 'member',

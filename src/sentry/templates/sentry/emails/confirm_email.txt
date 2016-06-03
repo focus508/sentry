@@ -1,0 +1,7 @@
+Thanks for signing up for Sentry! Please confirm your email ({{ user.username|safe }}) by clicking the link below:
+
+{{ url|safe }}
+
+This link will expire in 48 hours.
+
+If you did not sign up, you may simply ignore this email.

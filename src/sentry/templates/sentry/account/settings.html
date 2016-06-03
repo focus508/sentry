@@ -46,6 +46,11 @@
             {% if form.new_password %}
           </div>
         </div>
+        <!-- TODO: only show this if not verified -->
+        <div class="form-group">
+          {% trans "Your email address has not been verified. " %}
+          <a href="{% url 'sentry-account-confirm-email-send' %}">{% trans "Resend Verification Email" %}</a>.
+        </div>
         <p class="help-block pull-right" style="margin-top: 0">({% trans "Optional" %})</p>
         {% with form.new_password as field %}
             {{ field|as_crispy_field }}
