@@ -4,7 +4,6 @@ from __future__ import absolute_import
 
 import mock
 
-from django.core import mail
 from django.core.urlresolvers import reverse
 from exam import fixture
 from social_auth.models import UserSocialAuth
@@ -232,8 +231,8 @@ class RecoverPasswordConfirmTest(TestCase):
         user = User.objects.get(id=self.user.id)
         assert user.check_password('bar')
 
-class ConfirmEmailSendTest(TestCase):
 
+class ConfirmEmailSendTest(TestCase):
     @mock.patch('sentry.models.LostPasswordHash.send_confirm_email')
     def test_valid(self, send_confirm_email):
         self.login_as(self.user)
@@ -249,12 +248,11 @@ class ConfirmEmailTest(TestCase):
         self.user.is_verified = False
         self.user.save()
         resp = self.client.get(reverse('sentry-account-confirm-email',
-                                        args=[self.user.id, '5b1f2f266efa03b721cc9ea0d4742c5e']))
+                                       args=[self.user.id, '5b1f2f266efa03b721cc9ea0d4742c5e']))
         assert resp.status_code == 200
         self.assertTemplateUsed(resp, 'sentry/account/confirm_email/failure.html')
         user = User.objects.get(id=self.user.id)
         assert not user.is_verified
-
 
     def test_valid(self):
         self.user.is_verified = False
@@ -263,7 +261,7 @@ class ConfirmEmailTest(TestCase):
         self.client.get(reverse('sentry-account-confirm-email-send'))
         password_hash = self.user.lostpasswordhash_set.first().hash
         resp = self.client.get(reverse('sentry-account-confirm-email',
-                                        args=[self.user.id, password_hash]))
+                                       args=[self.user.id, password_hash]))
         assert resp.status_code == 200
         self.assertTemplateUsed(resp, 'sentry/account/confirm_email/success.html')
         user = User.objects.get(id=self.user.id)

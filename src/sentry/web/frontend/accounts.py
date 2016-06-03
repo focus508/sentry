@@ -126,7 +126,8 @@ def recover_confirm(request, user_id, hash):
 
 @login_required
 def start_confirm_email(request):
-    send_confirm_email(request.user)
+    if not request.user.is_verified:
+        send_confirm_email(request.user)
     return render_to_response('sentry/account/confirm_email/send.html', {}, request)
 
 
@@ -138,7 +139,10 @@ def confirm_email(request, user_id, hash):
             raise LostPasswordHash.DoesNotExist
         user = password_hash.user
     except LostPasswordHash.DoesNotExist:
-        tpl = 'sentry/account/confirm_email/failure.html'
+        if request.user.is_authenticated() and request.user.is_verified:
+            tpl = 'sentry/account/confirm_email/success.html'
+        else:
+            tpl = 'sentry/account/confirm_email/failure.html'
     else:
         tpl = 'sentry/account/confirm_email/success.html'
         password_hash.delete()
