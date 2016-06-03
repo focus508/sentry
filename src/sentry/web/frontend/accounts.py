@@ -141,9 +141,9 @@ def confirm_email(request, user_id, hash):
         tpl = 'sentry/account/confirm_email/failure.html'
     else:
         tpl = 'sentry/account/confirm_email/success.html'
-        # TODO: mark user as verified
         password_hash.delete()
-
+        user.is_verified = True
+        user.save()
     return render_to_response(tpl, {}, request)
 
 
@@ -159,6 +159,10 @@ def settings(request):
         'name': request.user.name,
     })
     if form.is_valid():
+        if form.cleaned_data['email'] != request.user.email:
+            request.user.is_verified = False
+            request.user.save()
+            send_confirm_email(request.user)
         form.save()
         messages.add_message(request, messages.SUCCESS, 'Your settings were saved.')
         return HttpResponseRedirect(request.path)

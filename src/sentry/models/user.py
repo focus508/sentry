@@ -49,6 +49,10 @@ class User(BaseModel, AbstractBaseUser):
 
     date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
 
+    is_verified = models.BooleanField(
+        _('verified'), default=False,
+        help_text=_('Designates whether this user has confirmed their email.'))
+
     objects = UserManager(cache_fields=['pk'])
 
     USERNAME_FIELD = 'username'
