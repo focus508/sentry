@@ -163,11 +163,12 @@ def settings(request):
         'name': request.user.name,
     })
     if form.is_valid():
-        if form.cleaned_data['email'] != request.user.email:
-            request.user.is_verified = False
-            request.user.save()
-            send_confirm_email(request.user)
-        form.save()
+        old_email = request.user.email
+        user = form.save()
+        if user.email != old_email:
+            user.is_verified = False
+            user.save()
+            send_confirm_email(user)
         messages.add_message(request, messages.SUCCESS, 'Your settings were saved.')
         return HttpResponseRedirect(request.path)
 
