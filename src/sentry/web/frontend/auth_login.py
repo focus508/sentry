@@ -10,9 +10,9 @@ from django.views.decorators.cache import never_cache
 
 from sentry import features
 from sentry.constants import WARN_SESSION_EXPIRED
-from sentry.models import AuthProvider, Organization, OrganizationStatus
+from sentry.models import AuthProvider, Email, Organization, OrganizationStatus
 from sentry.web.forms.accounts import AuthenticationForm, RegistrationForm
-from sentry.web.frontend.accounts import send_confirm_email
+from sentry.web.frontend.accounts import send_confirm_emails
 from sentry.web.frontend.base import BaseView
 from sentry.utils import auth
 
@@ -72,7 +72,8 @@ class AuthLoginView(BaseView):
 
         if can_register and register_form.is_valid():
             user = register_form.save()
-            send_confirm_email(user)
+            Email.objects.create(user=user, email=user.email)
+            send_confirm_emails(user)
 
             # HACK: grab whatever the first backend is and assume it works
             user.backend = settings.AUTHENTICATION_BACKENDS[0]

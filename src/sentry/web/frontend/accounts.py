@@ -21,7 +21,7 @@ from django.utils import timezone
 from sudo.decorators import sudo_required
 
 from sentry.models import (
-    LostPasswordHash, Project, ProjectStatus, UserOption, Authenticator)
+    Email, LostPasswordHash, Project, ProjectStatus, UserOption, Authenticator)
 from sentry.plugins import plugins
 from sentry.web.decorators import login_required, signed_auth_required
 from sentry.web.forms.accounts import (
@@ -33,16 +33,9 @@ from sentry.utils.auth import get_auth_providers, get_login_redirect
 from sentry.utils.safe import safe_execute
 
 
-def send_confirm_email(user):
-    password_hash, _ = LostPasswordHash.objects.get_or_create(
-        user=user
-    )
-    if not password_hash.is_valid():
-        password_hash.date_added = timezone.now()
-        password_hash.set_hash()
-        password_hash.save()
-
-    password_hash.send_confirm_email()
+def send_confirm_emails(user):
+    for email in user.emails.filter(is_verified=False):
+        email.send_confirm_email()
 
 
 @login_required
@@ -126,28 +119,29 @@ def recover_confirm(request, user_id, hash):
 
 @login_required
 def start_confirm_email(request):
-    if not request.user.is_verified:
-        send_confirm_email(request.user)
-    return render_to_response('sentry/account/confirm_email/send.html', {}, request)
+    has_unverified_emails = request.user.has_unverified_emails()
+    if has_unverified_emails:
+        send_confirm_emails(request.user)
+    return render_to_response('sentry/account/confirm_email/send.html',
+                              {'has_unverified_emails': has_unverified_emails},
+                              request)
 
 
 def confirm_email(request, user_id, hash):
     try:
-        password_hash = LostPasswordHash.objects.get(user=user_id, hash=hash)
-        if not password_hash.is_valid():
-            password_hash.delete()
-            raise LostPasswordHash.DoesNotExist
-        user = password_hash.user
-    except LostPasswordHash.DoesNotExist:
-        if request.user.is_authenticated() and request.user.is_verified:
+        email = Email.objects.get(user=user_id, validation_hash=hash)
+        if not email.hash_is_valid():
+            raise Email.DoesNotExist
+    except Email.DoesNotExist:
+        if request.user.is_authenticated() and not request.user.has_unverified_emails():
             tpl = 'sentry/account/confirm_email/success.html'
         else:
             tpl = 'sentry/account/confirm_email/failure.html'
     else:
         tpl = 'sentry/account/confirm_email/success.html'
-        password_hash.delete()
-        user.is_verified = True
-        user.save()
+        email.is_verified = True
+        email.validation_hash = ''
+        email.save()
     return render_to_response(tpl, {}, request)
 
 
@@ -166,9 +160,11 @@ def settings(request):
         old_email = request.user.email
         user = form.save()
         if user.email != old_email:
-            user.is_verified = False
-            user.save()
-            send_confirm_email(user)
+            email = Email.objects.get(user=request.user, email=old_email)
+            email.is_verified = False
+            email.email = user.email
+            email.save()
+            email.send_confirm_email()
         messages.add_message(request, messages.SUCCESS, 'Your settings were saved.')
         return HttpResponseRedirect(request.path)
 

@@ -49,10 +49,6 @@ class User(BaseModel, AbstractBaseUser):
 
     date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
 
-    is_verified = models.BooleanField(
-        _('verified'), default=False,
-        help_text=_('Designates whether this user has confirmed their email.'))
-
     objects = UserManager(cache_fields=['pk'])
 
     USERNAME_FIELD = 'username'
@@ -84,6 +80,9 @@ class User(BaseModel, AbstractBaseUser):
     def has_module_perms(self, app_label):
         warnings.warn('User.has_module_perms is deprecated', DeprecationWarning)
         return self.is_superuser
+
+    def has_unverified_emails(self):
+        return self.emails.filter(is_verified=False).exists()
 
     def get_label(self):
         return self.email or self.username or self.id

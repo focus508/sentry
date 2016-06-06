@@ -63,21 +63,3 @@ class LostPasswordHash(Model):
             context=context,
         )
         msg.send_async([self.user.email])
-
-    def send_confirm_email(self):
-        from sentry import options
-        from sentry.utils.email import MessageBuilder
-
-        context = {
-            'user': self.user,
-            'url': absolute_uri(reverse(
-                'sentry-account-confirm-email',
-                args=[self.user.id, self.hash]
-            )),
-        }
-        msg = MessageBuilder(
-            subject='%sConfirm Email' % (options.get('mail.subject-prefix'),),
-            template='sentry/emails/confirm_email.txt',
-            context=context,
-        )
-        msg.send_async([self.user.email])
