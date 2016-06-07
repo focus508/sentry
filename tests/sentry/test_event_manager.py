@@ -579,6 +579,19 @@ class EventManagerTest(TransactionTestCase):
             'version': '1.0',
         }
 
+    def test_missing_event_id(self):
+        data = self.make_event()
+        data.pop('event_id')
+        manager = EventManager(data)
+        data = manager.normalize()
+        assert 'event_id' in data
+
+    def test_garbage_event_id(self):
+        bad_event_id = 'abcxyz'
+        manager = EventManager(self.make_event(event_id=bad_event_id))
+        data = manager.normalize()
+        assert data['event_id'] != bad_event_id
+
 
 class GetHashesFromEventTest(TestCase):
     @patch('sentry.interfaces.stacktrace.Stacktrace.compute_hashes')

@@ -9,6 +9,7 @@ from __future__ import absolute_import, print_function
 
 import logging
 import math
+import re
 import six
 
 from datetime import datetime, timedelta
@@ -41,6 +42,8 @@ from sentry.utils.db import get_db_engine
 from sentry.utils.safe import safe_execute, trim, trim_dict
 from sentry.utils.strings import truncatechars
 from sentry.utils.validators import validate_ip
+
+uuid_re = re.compile(r'^[a-fA-F0-9]{32}$')
 
 
 def count_limit(count):
@@ -267,7 +270,7 @@ class EventManager(object):
         data['timestamp'] = timestamp
         data['received'] = float(timezone.now().strftime('%s'))
 
-        if not data.get('event_id'):
+        if 'event_id' not in data or not uuid_re.match(data['event_id']):
             data['event_id'] = uuid4().hex
 
         data.setdefault('message', '')
