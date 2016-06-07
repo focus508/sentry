@@ -8,7 +8,7 @@ from django.core.urlresolvers import reverse
 from exam import fixture
 from social_auth.models import UserSocialAuth
 
-from sentry.models import UserOption, LostPasswordHash, User, ProjectStatus
+from sentry.models import Email, LostPasswordHash, ProjectStatus, User, UserOption
 from sentry.testutils import TestCase
 
 
@@ -233,7 +233,7 @@ class RecoverPasswordConfirmTest(TestCase):
 
 
 class ConfirmEmailSendTest(TestCase):
-    @mock.patch('sentry.models.LostPasswordHash.send_confirm_email')
+    @mock.patch('sentry.models.Email.send_confirm_email')
     def test_valid(self, send_confirm_email):
         self.login_as(self.user)
         resp = self.client.get(reverse('sentry-account-confirm-email-send'))
@@ -245,24 +245,22 @@ class ConfirmEmailSendTest(TestCase):
 class ConfirmEmailTest(TestCase):
 
     def test_invalid(self):
-        self.user.is_verified = False
         self.user.save()
         resp = self.client.get(reverse('sentry-account-confirm-email',
                                        args=[self.user.id, '5b1f2f266efa03b721cc9ea0d4742c5e']))
         assert resp.status_code == 200
         self.assertTemplateUsed(resp, 'sentry/account/confirm_email/failure.html')
-        user = User.objects.get(id=self.user.id)
-        assert not user.is_verified
+        email = Email.objects.get(email=self.user.email)
+        assert not email.is_verified
 
     def test_valid(self):
-        self.user.is_verified = False
         self.user.save()
         self.login_as(self.user)
         self.client.get(reverse('sentry-account-confirm-email-send'))
-        password_hash = self.user.lostpasswordhash_set.first().hash
+        email = self.user.emails.first()
         resp = self.client.get(reverse('sentry-account-confirm-email',
-                                       args=[self.user.id, password_hash]))
+                                       args=[self.user.id, email.validation_hash]))
         assert resp.status_code == 200
         self.assertTemplateUsed(resp, 'sentry/account/confirm_email/success.html')
-        user = User.objects.get(id=self.user.id)
-        assert user.is_verified
+        email = self.user.emails.first()
+        assert email.is_verified

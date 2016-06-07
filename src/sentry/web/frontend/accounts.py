@@ -161,9 +161,7 @@ def settings(request):
         user = form.save()
         if user.email != old_email:
             email = Email.objects.get(user=request.user, email=old_email)
-            email.is_verified = False
-            email.email = user.email
-            email.save()
+            email.delete()
             email.send_confirm_email()
         messages.add_message(request, messages.SUCCESS, 'Your settings were saved.')
         return HttpResponseRedirect(request.path)

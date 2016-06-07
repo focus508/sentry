@@ -10,7 +10,7 @@ from django.contrib import messages
 from sentry import features
 from sentry.auth.helper import AuthHelper
 from sentry.constants import WARN_SESSION_EXPIRED
-from sentry.models import AuthProvider, Email, Organization, OrganizationStatus
+from sentry.models import AuthProvider, Organization, OrganizationStatus
 from sentry.utils import auth
 from sentry.web.forms.accounts import AuthenticationForm, RegistrationForm
 from sentry.web.frontend.accounts import send_confirm_emails
@@ -46,7 +46,6 @@ class AuthOrganizationLoginView(BaseView):
 
         if can_register and register_form.is_valid():
             user = register_form.save()
-            Email.objects.create(user=user, email=user.email)
             send_confirm_emails(user)
 
             defaults = {

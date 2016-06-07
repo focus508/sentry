@@ -25,13 +25,12 @@ class Email(Model):
         _('verified'), default=False,
         help_text=_('Designates whether this user has confirmed their email.'))
 
-    unique_together = ((user, email),)
-
     class Meta:
         app_label = 'sentry'
         db_table = 'sentry_email'
+        unique_together = (('user', 'email'),)
 
-    __repr__ = sane_repr('user_id', 'hash')
+    __repr__ = sane_repr('user_id', 'email')
 
     def set_hash(self):
         import hashlib

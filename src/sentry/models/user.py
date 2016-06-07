@@ -71,7 +71,10 @@ class User(BaseModel, AbstractBaseUser):
     def save(self, *args, **kwargs):
         if not self.username:
             self.username = self.email
-        return super(User, self).save(*args, **kwargs)
+        user = super(User, self).save(*args, **kwargs)
+        if not self.emails.filter(email=self.email).exists():
+            self.emails.create(email=self.email, user=self)
+        return user
 
     def has_perm(self, perm_name):
         warnings.warn('User.has_perm is deprecated', DeprecationWarning)
